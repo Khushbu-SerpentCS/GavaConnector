@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_api_endpoint,acess.api.endpoint,model_api_endpoint,base.group_user,1,1,1,0
+access_gava_api,acess.gava.api,model_gava_api,base.group_user,1,1,1,0
+access_gava_tax_obligation,acess.gava.tax.obligation,model_tax_obligation,base.group_user,1,1,1,1
+access_gava_tax_certificate,acess.gava.tax.certificate,model_tax_certificate,base.group_user,1,1,1,1
+access_gava_vat_exemption_line,acess.gava.vat.exemption.line,model_vat_exemption_line,base.group_user,1,1,1,1

@@ -1,0 +1,131 @@
+<odoo>
+    <data noupdate="1">
+
+        <record id="pin_checker_by_pin" model="api.endpoint">
+            <field name="name">PIN Checker by PIN</field>
+            <field name="code">checker_pin</field>
+            <field name="endpoint">/checker/v1/pinbypin</field>
+        </record>
+
+        <record id="pin_checker_by_id" model="api.endpoint">
+            <field name="name">PIN Checker BY ID</field>
+            <field name="code">checker_id</field>
+            <field name="endpoint">/checker/v1/pin</field>
+        </record>
+
+        <record id="kra_tax_service_office" model="api.endpoint">
+            <field name="name">Know KRA Tax Service Office</field>
+            <field name="code">kra_know_tax_service</field>
+            <field name="endpoint">/dtd/checker/v1/station</field>
+        </record>
+
+        <record id="it_exemption_checker" model="api.endpoint">
+            <field name="name">IT Exemption Checker</field>
+            <field name="code">it_exemption_checker</field>
+            <field name="endpoint">/checker/v1/itexemption</field>
+        </record>
+
+        <record id="checker_by_cert_number" model="api.endpoint">
+            <field name="name">Import Certificate Checker by Cert Number</field>
+            <field name="code">import_certificate_num</field>
+            <field name="endpoint">/cbc/checker/v1/importcertificate/num</field>
+        </record>
+
+        <record id="fetch_taxpayer_obligations" model="api.endpoint">
+            <field name="name">Fetch Taxpayer Obligations</field>
+            <field name="code">taxpayer_obligations</field>
+            <field name="endpoint">/dtd/checker/v1/obligation</field>
+        </record>
+
+        <record id="kra_tcc_application" model="api.endpoint">
+            <field name="name">Tax Compliance Certificate Application</field>
+            <field name="code">tcc</field>
+            <field name="endpoint">/application/v1/tcc</field>
+        </record>
+
+        <record id="kra_pin_reg_individual" model="api.endpoint">
+            <field name="name">KRA PIN Registration - Individual</field>
+            <field name="code">pin_reg_individual</field>
+            <field name="endpoint">/v1/generate/pin</field>
+        </record>
+
+        <record id="tax_compliance_checker" model="api.endpoint">
+            <field name="name">Tax Compliance Certificate Checker</field>
+            <field name="code">compliance_checker</field>
+            <field name="endpoint">/v1/kra-tcc/validate</field>
+        </record>
+
+        <record id="import_certificate_checker_by_pin" model="api.endpoint">
+            <field name="name">Import Certificate Checker by PIN</field>
+            <field name="code">certificate_checker_by_pin</field>
+            <field name="endpoint">/cbc/checker/v1/importcertificate/pin</field>
+        </record>
+
+        <record id="vat_exemption_checker" model="api.endpoint">
+            <field name="name">VAT Exemption Checker</field>
+            <field name="code">vat_exemption_checker</field>
+            <field name="endpoint">/checker/v1/vatexemption</field>
+        </record>
+
+        <record id="customs_declaration_status_checker" model="api.endpoint">
+            <field name="name">Customs Declaration Status Checker</field>
+            <field name="code">customs_declaration_checker</field>
+            <field name="endpoint">/checker/v1/simple/declaration</field>
+        </record>
+
+        <record id="rental_witholding_prn_generation" model="api.endpoint">
+            <field name="name">Rental Withholding PRN Generation</field>
+            <field name="code">rental_withholding_prn</field>
+            <field name="endpoint">/generate/v1/prn/whtrental</field>
+        </record>
+
+        <record id="income_tax_withholding_prn_generation" model="api.endpoint">
+            <field name="name">Income Tax Withholding PRN Generation</field>
+            <field name="code">income_tax_withholding_prn</field>
+            <field name="endpoint">/generate/v1/prn/whtit</field>
+        </record>
+
+        <record id="tot_return_filing" model="api.endpoint">
+            <field name="name">TOT Return Filing</field>
+            <field name="code">tot_return_filing</field>
+            <field name="endpoint">/filing/v1/tot/paymentregistration</field>
+        </record>
+
+        <record id="vat_withholding_prn_generation" model="api.endpoint">
+            <field name="name">VAT Withholding PRN Generation</field>
+            <field name="code">vat_withholding_prn</field>
+            <field name="endpoint">/generate/v1/prn/whtvat</field>
+        </record>
+
+        <record id="invoice_checker" model="api.endpoint">
+            <field name="name">Invoice Checker</field>
+            <field name="code">invoice_checker</field>
+            <field name="endpoint">/checker/v1/invoice</field>
+        </record>
+
+        <record id="excise_licence_checker_pin" model="api.endpoint">
+            <field name="name">Excise License Checker By Pin</field>
+            <field name="code">licence_checker_pin</field>
+            <field name="endpoint">/checker/v1/ExciseLicenseByPin</field>
+        </record>
+
+        <record id="excise_licence_checker_number" model="api.endpoint">
+            <field name="name">Excise License Checker By Certificate Number</field>
+            <field name="code">licence_checker_number</field>
+            <field name="endpoint">/checker/v1/ExciseLicenseByNum</field>
+        </record>
+
+        <record id="nil_return_filing" model="api.endpoint">
+            <field name="name">NIL Return Filling</field>
+            <field name="code">nil_return_filing</field>
+            <field name="endpoint">/dtd/return/v1/nil</field>
+        </record>
+
+        <record id="customs_tax_calculator" model="api.endpoint">
+            <field name="name">Customs Tax Calculator</field>
+            <field name="code">customs_tax_calc</field>
+            <field name="endpoint">/api/v1/taxCalculator/</field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <menuitem
+            id="menu_gava_root"
+            name="Gava Connect"
+            sequence="10"/>
+        <menuitem
+            id="menu_gava_configuration"
+            name="Configuration"
+            parent="menu_gava_root"
+            sequence="10"/>
+        <menuitem
+            id="menu_gava_api"
+            name="API Credentials"
+            parent="menu_gava_configuration"
+            action="action_gava_api"
+            sequence="10"/>
+<!--    groups="group_gava_administrator"-->
+
+</odoo>
