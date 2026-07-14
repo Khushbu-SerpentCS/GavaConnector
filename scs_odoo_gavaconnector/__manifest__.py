@@ -24,12 +24,15 @@
           views and a dedicated "Tax Compliance (KRA)" tab on the Contact form.
             """,
     "author": "SerpentCS",
-    "depends": ["base", "web", "contacts"],
+    "depends": ["base", "web", "contacts", "hr", "hr_payroll", "purchase", "sale"],
     "data": [
         "security/ir.model.access.csv",
         "data/api_endpoint_data.xml",
+        "data/ir_cron_data.xml",
         "views/gava_api_view.xml",
         "views/res_partner_view.xml",
+        "views/hr_employee_view.xml",
+        "views/purchase_order_view.xml",
         "views/menu.xml",
         # 'data/ir_config_parameter.xml',
     ],

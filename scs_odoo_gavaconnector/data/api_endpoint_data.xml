@@ -39,7 +39,7 @@
 
         <record id="kra_tcc_application" model="api.endpoint">
             <field name="name">Tax Compliance Certificate Application</field>
-            <field name="code">tcc</field>
+            <field name="code">tcc_application</field>
             <field name="endpoint">/application/v1/tcc</field>
         </record>
 

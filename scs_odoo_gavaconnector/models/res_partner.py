@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime,timedelta
 
 from markupsafe import Markup
 
-from odoo import _, fields, models
+from odoo import _, fields, models, api
 from odoo.exceptions import UserError
 
 
@@ -95,8 +95,17 @@ class ResPartner(models.Model):
     goods_class = fields.Char(string="Class of Goods", copy=False)
     excise_licence_no = fields.Char(string="Excise Licence No.", copy=False)
     excise_licence_issue_date = fields.Date(string="Excise Licence Issue Date", copy=False)
-    excise_licence_last_checked = fields.Datetime(string="Excise Licenece "
+    excise_licence_last_checked = fields.Datetime(string="Excise Licence "
                                                          "Last Checked", copy=False)
+    tcc_reason = fields.Char(string="TCC Reason", help="Short reason for TCC application")
+    ack_number = fields.Char(string="Acknowledgment Number",
+                             help="Acknowledgment Number issued by iTax confirming the successful Nil return.")
+    tcc_number = fields.Char(string="TCC Number", help="Tax Compliance Certificate "
+                                                       "Number")
+    tcc_status = fields.Char(string="TCC Status", help="Tax Compliance Certificate "
+                                                       "status")
+    tcc_issue_date = fields.Date(string="TCC Issue Date")
+    tcc_expiry_date = fields.Date(string="TCC Expire Date")
 
 
     # ------------------------------------------------------------
@@ -133,9 +142,10 @@ class ResPartner(models.Model):
         self.ensure_one()
         if not self.kra_pin:
             raise UserError(_("Please enter a KRA PIN."))
-
-        api_config = self._get_gava_api("checker_pin")
-        response = api_config.call_endpoint(payload={"KRAPIN": self.kra_pin})
+        #
+        # api_config = self._get_gava_api("checker_pin")
+        # response = api_config.call_endpoint(payload={"KRAPIN": self.kra_pin})
+        response = self.env['gava.api'].validate_kra_pin(self.kra_pin)
 
         validation_date = fields.Datetime.now()
 
@@ -179,45 +189,6 @@ class ResPartner(models.Model):
                         "status": self.kra_validation_status,
                         },
                 )
-        return self._reload()
-
-    def action_register_kra_pin(self):
-        self.ensure_one()
-        api_config = self._get_gava_api("pin_reg_individual")
-
-        if not self.taxpayer_dob:
-            raise UserError(
-                    _("Please set the Taxpayer Date of Birth before registering a PIN.")
-                    )
-
-        payload = {
-                "TAXPAYERDETAILS": {
-                        "TaxpayerType"        : self.taxpayer_type,
-                        "IdentificationNumber": self.tax_payerid,
-                        "DateOfBirth"         : fields.Date.to_string(
-                                self.taxpayer_dob),
-                        "MobileNumber"        : self.mobile,
-                        "EmailAddress"        : self.email,
-                        "IsPinWithNoOblig"    : "Yes" if self.is_pin_with_no_oblig else "No",
-                        }
-                }
-        response = api_config.call_endpoint(payload=payload)
-
-        new_pin = response.get("TaxpayerPIN") or response.get("PIN")
-        if new_pin:
-            self.kra_pin = new_pin
-            self._post_kra_message(_("KRA PIN registered successfully: %s") % new_pin)
-        else:
-            error_message = (
-                    response.get("ErrorMessage")
-                    or response.get("Message")
-                    or _("Unknown error")
-            )
-            self._post_kra_message(
-                    _("KRA PIN registration failed: %s") % error_message,
-                    success=False,
-                    )
-
         return self._reload()
 
     def action_retrieve_kra_pin(self):
@@ -634,3 +605,212 @@ class ResPartner(models.Model):
                     % (error_message or _("Unknown error")),
                     success=False,
                     )
+
+    def action_pin_registration(self):
+        self.ensure_one()
+        taxpayer_details_dict = {}
+        if not self.taxpayer_type:
+            raise UserError(_("Please enter Taxpayer Type."))
+        if not self.tax_payerid:
+            raise UserError(_("Please enter Taxpayer ID."))
+        if not self.taxpayer_dob:
+            raise UserError(_("Please enter Taxpayer Date of birth."))
+        if not self.phone:
+            raise UserError(_("Please enter Taxpayer Phone Number."))
+        if not self.email:
+            raise UserError(_("Please enter Taxpayer Email."))
+        taxpayer_details_dict.update(
+                {
+                        "TaxpayerType"        : self.taxpayer_type,
+                        "IdentificationNumber": self.tax_payerid,
+                        "DateOfBirth"         : self.taxpayer_dob.strftime("%d/%m/%Y"),
+                        "MobileNumber"        : self.phone,
+                        "EmailAddress"        : self.email,
+                        "IsPinWithNoOblig"    : "Yes" if self.is_pin_with_no_oblig else "No",
+                        }
+                )
+        api_config = self._get_gava_api("pin_reg_individual")
+        data = api_config.call_endpoint(
+                payload={"TAXPAYERDETAILS": taxpayer_details_dict})
+        response = data.get("RESPONSE", {})
+        response_status = response.get("Status")
+        response_code = response.get("ResponseCode")
+        if response_status == "OK" and response_code == "80000":
+            self.kra_pin = response.get("PIN")
+
+            self._post_kra_message(
+                    _(
+                            "KRA PIN registration completed successfully.\n"
+                            "Generated PIN: %s"
+                            ) % (self.kra_pin or "-"),
+                    success=True,
+                    )
+        error_message = (
+                data.get("ErrorMessage")
+                or response.get("Message")
+                or _("Unknown error")
+        )
+
+        self._post_kra_message(
+                _(
+                        "KRA PIN registration failed.\n"
+                        "Reason: %s"
+                        ) % error_message,
+                success=False,
+                )
+
+    def action_tcc_application(self):
+        self.ensure_one()
+        if not self.kra_pin:
+            raise UserError(_("Please enter Taxpayer PIN Number."))
+        if not self.tcc_reason:
+            raise UserError(_("Please enter TCC Reason."))
+        taxpayer_details_dict = {}
+        api_config = self._get_gava_api("tcc_application")
+        taxpayer_details_dict.update({
+                "TaxpayerPIN": self.kra_pin,
+                "ReasonForTCC": self.tcc_reason
+                })
+        data = api_config.call_endpoint(payload={
+                "TAXPAYERDETAILS": taxpayer_details_dict
+                })
+        response = data.get('RESPONSE') or {}
+        if response.get("ResponseCode") == '85000':
+            self.ack_number = response.get('AckNumber')
+            self.tcc_number = response.get('TCCNumber')
+            self._post_kra_message(_("TCC Applied Successfully"), success=True)
+
+        error_message = (
+                data.get("ErrorMessage")
+                or response.get("Message")
+                or _("Unknown error")
+        )
+        self._post_kra_message(_("Tax Certification Compliance Application Failed.\n"
+                                 "Reason: %s")% error_message, success=False)
+
+    def action_tcc_checker(self):
+        self.ensure_one()
+        if not self.kra_pin:
+            raise UserError(_("Please enter Taxpayer PIN Number."))
+        if not self.tcc_number:
+            raise UserError(_("Please enter TCC Number."))
+        api_config = self._get_gava_api("compliance_checker")
+        data = api_config.call_endpoint(payload={
+                'kraPIN'   : self.kra_pin,
+                'tccNumber': self.tcc_number,
+                })
+        if data.get("ResponseCode") == "83000":
+            tcc_data = data.get("TCCData", {})
+
+            self.write({
+                    "tcc_status"     : tcc_data.get("TCCStatus"),
+                    "tcc_issue_date" : (
+                            datetime.strptime(
+                                    tcc_data.get("TCCIssueDate"), "%d/%m/%Y"
+                                    ).date()
+                            if tcc_data.get("TCCIssueDate")
+                            else False
+                    ),
+                    "tcc_expiry_date": (
+                            datetime.strptime(
+                                    tcc_data.get("TCCExpiryDate"), "%d/%m/%Y"
+                                    ).date()
+                            if tcc_data.get("TCCExpiryDate")
+                            else False
+                    ),
+                    })
+
+            self._post_kra_message(
+                    _(
+                            "Tax Compliance Certificate validated successfully.\n\n"
+                            "TCC Number: %s\n"
+                            "Status: %s"
+                            ) % (
+                            tcc_data.get("TCCNumber") or "-",
+                            tcc_data.get("TCCStatus") or "-",
+                            ),
+                    success=True,
+                    )
+            return True
+
+        error_message = (
+                data.get("ErrorMessage")
+                or data.get("Message")
+                or _("Unknown error")
+        )
+
+        self._post_kra_message(
+                _(
+                        "Tax Compliance Certificate validation failed.\n"
+                        "Reason: %s"
+                        ) % error_message,
+                success=False,
+                )
+
+        raise UserError(error_message)
+
+    @api.model
+    def cron_notify_it_exemption_expiry(self):
+        """Notify Accounts Manager and Supplier 30 days before IT exemption expiry."""
+
+        today = fields.Date.today()
+        expiry_limit = today + timedelta(days=30)
+
+        partners = self.search([
+                ("it_exemption_status", "=", True),
+                ("it_exemption_expiry_date", "!=", False),
+                ])
+
+        accounts_group = self.env.ref("account.group_account_manager",
+                                      raise_if_not_found=False)
+
+        for partner in partners:
+            expiry_date = fields.Date.to_date(partner.it_exemption_expiry_date)
+
+            if today <= expiry_date <= expiry_limit:
+
+                # Avoid duplicate notifications
+                activity_exists = self.env["mail.activity"].search_count([
+                        ("res_model", "=", "res.partner"),
+                        ("res_id", "=", partner.id),
+                        ("summary", "=", "Income Tax Exemption Certificate Expiring"),
+                        ])
+
+                if not activity_exists and accounts_group:
+                    for user in accounts_group.users:
+                        self.env["mail.activity"].create({
+                                "activity_type_id": self.env.ref(
+                                        "mail.mail_activity_data_todo"
+                                        ).id,
+                                "summary"         : _(
+                                    "Income Tax Exemption Certificate Expiring"),
+                                "note"            : _(
+                                        "The Income Tax Exemption Certificate for supplier "
+                                        "<b>%s</b> will expire on <b>%s</b>.<br/><br/>"
+                                        "Certificate No: <b>%s</b><br/>"
+                                        "Please request a renewed certificate."
+                                        ) % (
+                                                            partner.display_name,
+                                                            partner.it_exemption_expiry_date,
+                                                            partner.it_exemption_cert_no,
+                                                            ),
+                                "user_id"         : user.id,
+                                "res_model_id"    : self.env["ir.model"]._get_id(
+                                    "res.partner"),
+                                "res_id"          : partner.id,
+                                "date_deadline"   : today,
+                                })
+
+                # Optional: Notify supplier
+                if partner.email:
+                    partner.message_post(
+                            body=_(
+                                    "Your Income Tax Exemption Certificate "
+                                    "<b>%s</b> will expire on <b>%s</b>. "
+                                    "Please provide a renewed certificate."
+                                    ) % (
+                                         partner.it_exemption_cert_no,
+                                         partner.it_exemption_expiry_date,
+                                         ),
+                            partner_ids=[partner.id],
+                            )

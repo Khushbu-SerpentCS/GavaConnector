@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="hr_employee_view_form_inherit_kra_gavaconnector" model="ir.ui.view">
+        <field name="name">hr.employee.view.form.kra</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='citizenship']" position="replace">
+                <!-- Replaced citizenship group to display buttons beside fields -->
+                <group name="citizenship" string="Citizenship">
+
+                    <field name="country_id"
+                           options='{"no_open": True, "no_create": True}'/>
+                    <field name="is_non_resident" eval="False"/>
+
+                    <field name="taxpayer_type"/>
+
+                    <label for="identification_id"/>
+                    <div class="o_row">
+                        <field name="identification_id"/>
+                        <button name="action_retrieve_kra_pin"
+                                type="object"
+                                string="Retrieve KRA PIN"
+                                class="btn-link ms-2"/>
+                    </div>
+                    <label for="kra_pin"/>
+                    <div class="o_row">
+                        <field name="kra_pin"/>
+                        <field name="pin_status"
+                               widget="badge"
+                               nolabel="1"
+                               decoration-success="pin_status == 'Active'"
+                               decoration-warning="pin_status == 'Suspended'"
+                               decoration-danger="pin_status == 'Cancelled'"
+                               decoration-muted="pin_status == 'Stopped'"/>
+                        <button name="action_verify_pin"
+                                type="object"
+                                string="Verify KRA PIN"
+                                class="btn-link ms-2"
+                                invisible="not kra_pin"
+                        />
+                    </div>
+
+                    <field name="pin_last_checked"
+                           readonly="1"
+                           force_save="1"/>
+
+                    <label for="kra_tax_station"/>
+                    <div class="o_row">
+                        <field name="kra_tax_station" readonly="1" force_save="1"/>
+                        <button name="action_know_kra_station"
+                                type="object"
+                                string="Know Tax Station"
+                                class="btn-link ms-2"
+                                invisible="not kra_pin"
+                        />
+                    </div>
+
+                    <field name="ssnid"/>
+                    <label for="passport_id"/>
+                    <div class="o_wrap_label d-flex flex-row gap-3 align-items-baseline">
+                        <field name="passport_id"/>
+                        <label for="passport_expiration_date"
+                               class="flex-shrink-0"
+                               invisible="not passport_id"
+                               string="Expires on"/>
+                        <field name="passport_expiration_date"
+                               invisible="not passport_id"/>
+                    </div>
+
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

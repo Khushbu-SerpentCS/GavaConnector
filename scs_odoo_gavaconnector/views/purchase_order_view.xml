@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="purchase_order_inherited_form_gava" model="ir.ui.view">
+            <field name="name">purchase.order.inherited.form.gava</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//header/button[@name='button_confirm']" position="after">
+                    <button name="action_check_import_cert_by_number" class="btn-link"
+                            type="object" string="Check Certificate"/>
+                </xpath>
+                <xpath expr="//group" position="after">
+                    <group>
+                        <field name="it_exemption_status" force_save="1"/>
+                        <field name="it_exemption_cert_no" force_save="1"/>
+                        <field name="it_exemption_effective_date" force_save="1"/>
+                        <field name="it_exemption_expiry_date" force_save="1"/>
+                        <field name="it_exemption_issue_date" force_save="1"/>
+                    </group>
+                </xpath>
+                <field name="partner_ref" position="after">
+                    <label for="tax_certificate_id"/>
+                    <div class="o_row">
+                        <field name="tax_certificate_id"
+                               domain="[('partner_id', '=', partner_id)]"/>
+                        <field name="tax_certificate_status" force_save="1" readonly="1"
+                               widget="badge" nolabel="1"
+                               decoration-success="tax_certificate_status == 'Approved'"/>
+                    </div>
+                    <field name="tax_certificate_issue_date" readonly="1"
+                           force_save="1"/>
+
+                </field>
+            </field>
+        </record>
+    </data>
+</odoo>

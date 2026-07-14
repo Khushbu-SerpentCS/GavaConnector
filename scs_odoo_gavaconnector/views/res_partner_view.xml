@@ -137,8 +137,21 @@
                                 <button name="action_know_kra_station" type="object"
                                         string="Find Station" icon="fa-search" class="btn-secondary ms-2"/>
                             </div>
-
-<!--                            <field name="kra_last_checked"/>-->
+                            <label for="tcc_reason"/>
+                            <div class="o_row">
+                                <field name="tcc_reason"/>
+                                <button name="action_tcc_application" type="object"
+                                        string="TCC Application"
+                                        class="btn-secondary ms-2"/>
+                            </div>
+                            <field name="ack_number"/>
+                            <label for="tcc_number"/>
+                            <div class="o_row">
+                                <field name="tcc_number"/>
+                                <button name="action_tcc_checker" type="object"
+                                        string="TCC Checker"
+                                        class="btn-secondary ms-2"/>
+                            </div>
                         </group>
 
                         <group string="PIN Registration &amp; Retrieval">
@@ -154,10 +167,10 @@
                             <field name="taxpayer_dob"/>
                             <field name="is_pin_with_no_oblig" widget="boolean_toggle"/>
 
-<!--                            <button name="action_register_kra_pin" type="object"-->
-<!--                                    string="Register New PIN" icon="fa-id-card"-->
-<!--                                    class="btn-primary mt-2"-->
-<!--                                    confirm="This will submit a new KRA PIN registration request. Continue?"/>-->
+                            <button name="action_pin_registration" type="object"
+                                    string="Register New PIN" icon="fa-id-card"
+                                    class="btn-primary mt-2"
+                                    confirm="This will submit a new KRA PIN registration request. Continue?"/>
                         </group>
                     </group>
                     <group string=" ">
@@ -268,7 +281,7 @@
                                                column_invissible="1" readonly="1"/>
                                         <button name="action_check_import_certificate_by_num"
                                                 type="object"
-                                                string="By Number"
+                                                string="Check By Number"
                                                 icon="fa-hashtag"
                                                 class="btn-secondary ms-2"
                                                 help="Validate the import certificate using the Certificate Number."/>

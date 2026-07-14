@@ -211,6 +211,8 @@ class GavaApi(models.Model):
             headers["Authorization"] = f"Bearer {self.get_valid_token()}"
 
         url = f"{(self.base_url or '').rstrip('/')}{endpoint}"
+        print("\nmethod->", method, "\nendpoint->", endpoint, "\npayload->", payload,
+              "\nauthenticated->", authenticated)
         try:
             response = requests.request(
                     method=method,
@@ -268,6 +270,7 @@ class GavaApi(models.Model):
     def call_endpoint(self, payload=None, params=None, method="POST", endpoint=None):
         """Standardized entry point for calling this configuration's API.
         """
+        print("endpoint  method calling>>>>>>>>>>>>>>>>>>>>>")
         self.ensure_one()
         endpoint = endpoint or self.api_endpoint_id.endpoint
         if not endpoint:
@@ -276,6 +279,7 @@ class GavaApi(models.Model):
         data = self._request(
                 method=method, endpoint=endpoint, payload=payload, params=params
                 )
+        print("data>>>>>>>>>>>>>>", data)
         _logger.info("Gava API [%s]: call to %s completed.", self.name, endpoint)
         return data
 
@@ -289,6 +293,59 @@ class GavaApi(models.Model):
                         ],
                 limit=1,
                 )
+
+    @api.model
+    def get_api(self, code):
+        """Return the configured API by code."""
+        api_config = self.get_api_by_code(code)
+        if not api_config:
+            raise UserError(_(
+                    "This feature is not configured. Please contact your "
+                    "administrator to configure the Gava Connect API."
+                    ))
+        return api_config
+
+    def retrieve_kra_pin(self, taxpayer_type, taxpayer_id):
+        api_config = self.get_api("checker_id")
+        return api_config.call_endpoint(
+                payload={
+                        "TaxpayerType": taxpayer_type,
+                        "TaxpayerID"  : taxpayer_id,
+                        }
+                )
+
+    def validate_kra_pin(self, kra_pin):
+        """Validate a KRA PIN using the Gava PIN Checker API.
+
+        :param str kra_pin: KRA PIN to validate.
+        :return: API response dictionary.
+        :rtype: dict
+        """
+        if not kra_pin:
+            raise ValueError(_("KRA PIN is required."))
+
+        api_config = self.get_api("checker_pin")
+        return api_config.call_endpoint(
+                payload={"KRAPIN": kra_pin}
+                )
+
+    def get_kra_tax_station(self, kra_pin):
+        api_config = self.get_api_by_code("kra_know_tax_service")
+        if not api_config:
+            raise UserError(
+                    _("The 'Know KRA Tax Service Station' API is not configured.")
+                    )
+
+        return api_config.call_endpoint(payload={"kraPIN": kra_pin})
+
+    def check_it_exemption(self, certificate_no):
+        api = self.get_api("it_exemption_checker")
+        return api.call_endpoint(
+                payload={
+                        "CertificateNo": certificate_no,
+                        }
+                )
+
 
 
 class TaxObligation(models.Model):
@@ -310,6 +367,7 @@ class TaxCertificate(models.Model):
     _name = "tax.certificate"
     _description = "Tax Certificate"
     _order = "issue_date desc, id desc"
+    _rec_name = "certificate_no"
 
     partner_id = fields.Many2one(
             "res.partner",
@@ -360,6 +418,7 @@ class TaxCertificate(models.Model):
         error_code = data.get("ErrorCode")
         error_message = data.get("ErrorMessage")
         import_cert_details = data.get("importCertificate_Dtls")
+        values = {}
 
         if data.get("response_code") == "83000":
             issue_date = False
@@ -371,35 +430,51 @@ class TaxCertificate(models.Model):
                             cert_details["issueDt"],
                             "%Y-%m-%d %H:%M:%S.%f"
                             )
-                self.write({
+                values = {
                         "status"      : cert_details.get("statusFlag"),
                         "product_code": cert_details.get("productCode"),
                         "issue_date"  : issue_date,
-                        })
+                        }
+                if self.id:
+                    self.write(values)
             self.partner_id._post_kra_message(_("Import Certificate verified successfully."))
+            return {
+                    "success": True,
+                    "values" : values,
+                    "message": False,
+                    }
         elif error_code == "83002":
-            self.partner_id._post_kra_message(
-                    _(
-                            "KRA Import Certificate Checker (By Certificate Number): "
-                            "Certificate '%(certificate)s' - %(error)s"
-                            ) % {
-                            "certificate": self.certificate_no,
-                            "error"      : error_message or _("Unknown error"),
-                            },
-                    success=False,
-                    )
+            message = _(
+                    "KRA Import Certificate Checker (By Certificate Number): "
+                    "Certificate '%(certificate)s' - %(error)s"
+                    ) % {
+                              "certificate": self.certificate_no,
+                              "error"      : error_message or _("Unknown error"),
+                              }
+
+            self.partner_id._post_kra_message(message, success=False)
+            return {
+                    "success": False,
+                    "values" : {},
+                    "message": message,
+                    }
         else:
-            self.partner_id._post_kra_message(
-                    _(
-                            "KRA Import Certificate Checker (By Certificate Number): "
-                            "Certificate '%(certificate)s' - %(error)s"
-                            ) % {
-                            "certificate": self.certificate_no,
-                            "error"      : error_message or _("Unknown error"),
-                            },
-                    success=False,
-                    )
-        return self.partner_id._reload()
+            message = _(
+                    "KRA Import Certificate Checker (By Certificate Number): "
+                    "Certificate '%(certificate)s' - %(error)s"
+                    ) % {
+                              "certificate": self.certificate_no,
+                              "error"      : error_message or _("Unknown error"),
+                              }
+
+            self.partner_id._post_kra_message(message, success=False)
+
+            return {
+                    "success": False,
+                    "values" : {},
+                    "message": message,
+                    }
+
 
 
 class ResPartnerVatExemptionLine(models.Model):

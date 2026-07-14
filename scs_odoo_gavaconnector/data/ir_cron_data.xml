@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record forcecreate="True" id="ir_cron_employee_tax_station" model="ir.cron">
+            <field name="name">Employee Tax Station</field>
+            <field name="model_id" ref="scs_odoo_gavaconnector.model_hr_employee"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_update_kra_tax_stations()</field>
+            <field name="active" eval="False"/>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">3</field>
+            <field name="interval_type">months</field>
+        </record>
+
+        <record id="ir_cron_it_exemption_expiry_notification" model="ir.cron">
+            <field name="name">Income Tax Exemption Expiry Reminder</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_notify_it_exemption_expiry()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active">True</field>
+        </record>
+    </data>
+</odoo>
