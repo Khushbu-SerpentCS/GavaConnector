@@ -25,6 +25,7 @@ class HrEmployee(models.Model):
             string="Taxpayer Type",
             )
     kra_tax_station = fields.Char(string="Tax Station")
+    tax_obligation_ids = fields.Many2many('tax.obligation')
 
     @api.constrains("kra_pin")
     def _check_kra_pin_format(self):
@@ -87,6 +88,63 @@ class HrEmployee(models.Model):
                 continue
 
         _logger.info("Completed KRA Tax Service Station update.")
+
+    def action_fetch_obligation(self):
+        if not self.kra_pin:
+            raise UserError(_("Please enter a KRA PIN first."))
+        response = self.env['gava.api'].get_tax_obligations(self.kra_pin)
+        response_code = response.get("ResponseCode")
+        response_msg = response.get("ResponseMsg")
+        obligation_list = response.get("ObligationsList") or []
+        if response_code == "20000":
+
+            obligation_obj = self.env["tax.obligation"]
+            obligation_ids = []
+
+            for obligation in obligation_list:
+                obligation_id = obligation.get("obligationId")
+
+                vals = {
+                        "name"           : obligation.get("obligationName"),
+                        "obligationid"   : obligation_id,
+                        "obligation_type": obligation.get("obligationType"),
+                        }
+                record = obligation_obj.search(
+                        [("obligationid", "=", obligation_id)],
+                        limit=1,
+                        )
+
+                if record:
+                    # Keep master data updated
+                    record.write({
+                            "name"           : vals["name"],
+                            "obligation_type": vals["obligation_type"],
+                            })
+                else:
+                    record = obligation_obj.create(vals)
+
+                obligation_ids.append(record.id)
+
+            # Replace employee's obligations with the latest list
+            self.tax_obligation_ids = [(6, 0, obligation_ids)]
+
+            self._post_kra_message(
+                    _("Tax obligations fetched successfully.")
+                    )
+
+        elif response_code == "20001":
+            self._post_kra_message(
+                    _("KRA Tax Obligations Fetcher failed: %s")
+                    % (response_msg or _("Unknown error")),
+                    success=False,
+                    )
+
+        else:
+            self._post_kra_message(
+                    _("KRA Tax Obligations Fetcher: Unable to fetch tax obligation details."),
+                    success=False,
+                    )
+
 
     def action_verify_pin(self):
         self.ensure_one()

@@ -23,7 +23,7 @@ class AccountMove(models.Model):
 
         partner = self.partner_id
 
-        if not partner.kra_pin:
+        if not partner.vat:
             return
 
         if not partner.it_exemption_certificate_no:

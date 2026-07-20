@@ -346,6 +346,13 @@ class GavaApi(models.Model):
                         }
                 )
 
+    def get_tax_obligations(self, kra_pin):
+        api = self.get_api("taxpayer_obligations")
+        return api.call_endpoint(
+                payload={
+                        "taxPayerPin": kra_pin,
+                        }
+                )
 
 
 class TaxObligation(models.Model):
@@ -437,7 +444,11 @@ class TaxCertificate(models.Model):
                         }
                 if self.id:
                     self.write(values)
-            self.partner_id._post_kra_message(_("Import Certificate verified successfully."))
+            self.partner_id._post_kra_message(_(
+                _("Import Certificate %(cert)s verified successfully.") % {
+                    "cert": self.certificate_no,
+                }
+            ))
             return {
                     "success": True,
                     "values" : values,
@@ -477,7 +488,7 @@ class TaxCertificate(models.Model):
 
 
 
-class ResPartnerVatExemptionLine(models.Model):
+class VatExemptionLine(models.Model):
     _name = 'vat.exemption.line'
     _description = 'VAT Exemption Certificate'
 
@@ -485,3 +496,81 @@ class ResPartnerVatExemptionLine(models.Model):
     cert_no = fields.Char(string="Certificate No")
     issued_date = fields.Datetime(string="Issued Date")
     status_flag = fields.Char(string="Status")
+
+
+class ExciseLicenceLine(models.Model):
+    _name = 'excise.licence.line'
+    _description = 'Excise Licence Details'
+
+    is_small_brewer = fields.Boolean(string="Is Small Brewer")
+    status = fields.Char(string="Status")
+    class_of_goods = fields.Char(string="Class of Goods")
+    date_of_issue = fields.Datetime(string="Date of Issue")
+    excise_licence_no = fields.Char(string="Excise Licence No")
+    partner_id = fields.Many2one('res.partner')
+
+    def action_excise_licence_checker_by_num(self):
+        self.ensure_one()
+
+        if not self.excise_licence_no:
+            raise UserError(_("Please enter an excise licence number to check."))
+
+        api_config = self.partner_id._get_gava_api("licence_checker_number")
+
+        data = api_config.call_endpoint(
+                payload={
+                        "ExciseLicenceNo": self.excise_licence_no,
+                        }
+                )
+
+        if not data:
+            raise UserError(_("No response received from the Gava API."))
+
+        response_status = data.get("Status")
+        response_code = data.get("ResponseCode")
+        error_code = data.get("ErrorCode")
+        error_message = data.get("ErrorMessage")
+
+        if error_code == "80002":
+            self.partner_id._post_kra_message(
+                    _("Excise Licence [%(licence)s]: %(error)s") % {
+                            "licence": self.excise_licence_no,
+                            "error"  : error_message,
+                            },
+                    success=False,
+                    )
+            return
+
+        if response_status == "OK" and response_code == "80000":
+            licence = data.get("ExciseLicenseDATA") or {}
+
+            date_of_issue = licence.get("DateOfIssue")
+            if date_of_issue:
+                date_of_issue = datetime.strptime(
+                        date_of_issue, "%d/%m/%Y"
+                        ).date()
+
+            # Update licence line
+            self.write({
+                    "status"           : licence.get("Status"),
+                    "class_of_goods"   : licence.get("ClassOfGoods"),
+                    "date_of_issue"    : date_of_issue,
+                    "excise_licence_no": licence.get("ExciseLicenceNo"),
+                    "is_small_brewer"  : licence.get("IsSmallBrewer"),
+                    })
+
+            self.partner_id._post_kra_message(
+                    _(
+                            "Excise Licence %(licence)s validated successfully."
+                            ) % {
+                            "licence": licence.get("ExciseLicenceNo"),
+                            },
+                    success=True,
+                    )
+        else:
+            self.partner_id._post_kra_message(
+                    _(
+                            "KRA Excise Licence Checker by licence number failed: %s"
+                            ) % (error_message or _("Unknown error")),
+                    success=False,
+                    )

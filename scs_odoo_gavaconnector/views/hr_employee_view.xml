@@ -70,6 +70,20 @@
 
                 </group>
             </xpath>
+            <notebook position="inside">
+                <page name="Tax Obligation">
+                    <button name="action_fetch_obligation" class="btn-secondary ms-2"
+                            type="object"
+                            string="Fetch Obligation"/>
+                    <field name="tax_obligation_ids">
+                        <list>
+                            <field name="obligationid" optional="hide"/>
+                            <field name="name"/>
+                            <field name="obligation_type"/>
+                        </list>
+                    </field>
+                </page>
+            </notebook>
         </field>
     </record>
 </odoo>

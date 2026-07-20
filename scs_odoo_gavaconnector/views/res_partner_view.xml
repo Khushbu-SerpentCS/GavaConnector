@@ -5,106 +5,12 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
-<!--            <xpath expr="//header" position="inside">-->
-<!--                <button name="action_retrieve_kra_pin" type="object"-->
-<!--                        string="Retrieve KRA PIN"/>-->
-<!--            </xpath>-->
-<!--            <xpath expr="//field[@name='category_id']" position="after">-->
+            <xpath expr="//field[@name='vat']" position="replace">
 
-<!--                <separator string="KRA INFORMATION" colspan="2"/>-->
-
-<!--                &lt;!&ndash; KRA PIN + Verify Button &ndash;&gt;-->
-<!--                <label for="kra_pin"/>-->
-
-<!--                <div class="o_row">-->
-<!--                    <field name="kra_pin"-->
-<!--                           placeholder="Enter KRA PIN"/>-->
-
-<!--                    <button name="action_validate_kra_pin"-->
-<!--                            type="object"-->
-<!--                            string="Verify"-->
-<!--                            icon="fa-shield"-->
-<!--                            class="btn btn-primary ms-2"/>-->
-<!--                    <button name="action_know_kra_station"-->
-<!--                            type="object"-->
-<!--                            string="Know Station"-->
-<!--                            icon="fa-search"-->
-<!--                            class="btn btn-primary ms-2"/>-->
-<!--                </div>-->
-
-<!--                &lt;!&ndash; Status &ndash;&gt;-->
-<!--                <label for="kra_validation_status"/>-->
-
-<!--                <field name="kra_validation_status"-->
-<!--                       nolabel="1"-->
-<!--                       widget="badge"-->
-<!--                       force_save="1"-->
-<!--                       decoration-success="kra_validation_status == 'Active'"-->
-<!--                       decoration-warning="kra_validation_status == 'Suspended'"-->
-<!--                       decoration-danger="kra_validation_status in ('Cancelled', 'Stopped')"/>-->
-
-<!--                &lt;!&ndash; Taxpayer Name &ndash;&gt;-->
-<!--                <label for="kra_taxpayer_name"/>-->
-
-<!--                <field name="kra_taxpayer_name"-->
-<!--                       force_save="1"-->
-<!--                       placeholder="Will be populated after verification"-->
-<!--                       nolabel="1"/>-->
-
-<!--                &lt;!&ndash; Tax Service station &ndash;&gt;-->
-<!--                <label for="tax_service_station"/>-->
-
-<!--                <field name="tax_service_station"-->
-<!--                       force_save="1"-->
-<!--                       nolabel="1"/>-->
-
-<!--                &lt;!&ndash; Taxpayer Type &ndash;&gt;-->
-<!--                <label for="type_of_taxpayer"/>-->
-
-<!--                <field name="type_of_taxpayer"-->
-<!--                       force_save="1"-->
-<!--                       placeholder="Will be populated after verification"-->
-<!--                       nolabel="1"/>-->
-
-<!--                <label for="tax_payerid"/>-->
-
-<!--                <div class="o_row">-->
-<!--                    <field name="tax_payerid"-->
-<!--                           force_save="1"-->
-<!--                           nolabel="1"/>-->
-
-<!--                    <button name="action_retrieve_kra_pin"-->
-<!--                            type="object"-->
-<!--                            string="Retrieve Pin"-->
-<!--                            icon="fa-shield"-->
-<!--                            class="btn btn-primary ms-2"/>-->
-<!--                </div>-->
-<!--                &lt;!&ndash; Taxpayer Type &ndash;&gt;-->
-<!--                <label for="taxpayer_type"/>-->
-
-<!--                <field name="taxpayer_type"-->
-<!--                       force_save="1"-->
-<!--                       nolabel="1"/>-->
-
-<!--                &lt;!&ndash; Tax Obligation &ndash;&gt;-->
-<!--                <label for="is_pin_with_no_oblig"/>-->
-
-<!--                <field name="is_pin_with_no_oblig"-->
-<!--                       widget="boolean_toggle"-->
-<!--                       nolabel="1"/>-->
-
-<!--                &lt;!&ndash; Last Checked &ndash;&gt;-->
-<!--                <label for="kra_last_checked"/>-->
-
-<!--                <field name="kra_last_checked"-->
-<!--                       force_save="1"-->
-<!--                       nolabel="1"/>-->
-
-<!--            </xpath>-->
+            </xpath>
 
             <notebook position="inside">
                 <page string="Tax Compliance (KRA)" name="kra_tax_compliance">
-
                     <div class="alert alert-warning d-flex align-items-center" role="alert"
                          invisible="kra_validation_status not in ('Suspended', 'Cancelled', 'Stopped')">
                         <i class="fa fa-exclamation-triangle me-2">
@@ -113,10 +19,10 @@
                     </div>
 
                     <group>
-                        <group string="PIN Verification">
-                            <label for="kra_pin"/>
+                        <group string="Tax PIN Information">
+                            <label for="vat"/>
                             <div class="o_row">
-                                <field name="kra_pin" placeholder="e.g. A123456789Z"/>
+                                <field name="vat" placeholder="e.g. A123456789Z"/>
                                 <button name="action_validate_kra_pin" type="object"
                                         string="Verify" icon="fa-shield" class="btn-secondary ms-2"/>
 <!--                                <button name="action_it_exemption_checker" type="object"-->
@@ -136,21 +42,6 @@
                                 <field name="tax_service_station"/>
                                 <button name="action_know_kra_station" type="object"
                                         string="Find Station" icon="fa-search" class="btn-secondary ms-2"/>
-                            </div>
-                            <label for="tcc_reason"/>
-                            <div class="o_row">
-                                <field name="tcc_reason"/>
-                                <button name="action_tcc_application" type="object"
-                                        string="TCC Application"
-                                        class="btn-secondary ms-2"/>
-                            </div>
-                            <field name="ack_number"/>
-                            <label for="tcc_number"/>
-                            <div class="o_row">
-                                <field name="tcc_number"/>
-                                <button name="action_tcc_checker" type="object"
-                                        string="TCC Checker"
-                                        class="btn-secondary ms-2"/>
                             </div>
                         </group>
 
@@ -173,59 +64,78 @@
                                     confirm="This will submit a new KRA PIN registration request. Continue?"/>
                         </group>
                     </group>
-                    <group string=" ">
-                        <group string="Income Tax Exemption">
-                            <label for="it_exemption_status"/>
-                            <div class="o_row">
-                                <field name="it_exemption_status"
-                                       widget="boolean_toggle"
-                                       readonly="1"/>
-
-                                <button name="action_it_exemption_checker"
-                                        type="object"
-                                        string="Check"
-                                        icon="fa-shield"
-                                        class="btn-secondary ms-2"/>
-                            </div>
+                    <group string="Income Tax Exemption">
+                        <group>
+                            <button name="action_it_exemption_checker"
+                                    type="object"
+                                    string="Income Tax Exemption Checker"
+                                    icon="fa-shield"
+                                    class="btn-secondary mt-2"/>
+                            <separator/>
+                            <field name="it_exemption_status"
+                                   widget="boolean_toggle" readonly="1"/>
                             <field name="it_exemption_cert_no" readonly="1"/>
-                            <field name="it_exemption_effective_date" readonly="1"/>
-                            <field name="it_exemption_expiry_date" readonly="1"/>
-                            <field name="it_exemption_issue_date" readonly="1"/>
-
+                            <field name="it_exemption_effective_date"
+                                   placeholder="Populated after check" readonly="1"/>
+                            <field name="it_exemption_expiry_date"
+                                   placeholder="Populated after check" readonly="1"/>
+                            <field name="it_exemption_issue_date"
+                                   placeholder="Populated after check" readonly="1"/>
                         </group>
-                        <group string="Excise Licence">
-                            <label for="kra_pin" string="Tax Payer PIN"/>
+                        <group>
+                            <label for="tcc_reason"/>
                             <div class="o_row">
-                                <field name="kra_pin" />
-                                <button name="action_excise_licence_checker_by_pin"
-                                        type="object"
-                                        string="Check Excise Licence"
-                                        icon="fa-shield"
+                                <field name="tcc_reason"/>
+                                <button name="action_tcc_application" type="object"
+                                        string="TCC Application"
                                         class="btn-secondary ms-2"/>
                             </div>
-                            <field name="trading_business_name" readonly="1"
-                                   force_save="1"/>
-                            <field name="is_small_brewer" readonly="1" force_save="1"/>
-                            <field name="goods_class" readonly="1" force_save="1"/>
-                            <field name="excise_licence_status" readonly="1"
-                                   force_save="1" widget="badge"
-                                   decoration-success="excise_licence_status == 'Approved'"
-                                   decoration-danger="excise_licence_status == 'Rejected'"
-                                   decoration-warning="excise_licence_status == 'Pending'"/>
-                            <field name="excise_licence_issue_date" readonly="1" force_save="1"/>
-                            <label for="excise_licence_no"/>
+                            <field name="ack_number"/>
+                            <label for="tcc_number"/>
                             <div class="o_row">
-                                <field name="excise_licence_no"/>
-                                <button name="action_excise_licence_checker_by_num"
-                                        type="object"
-                                        string="Check Excise Licence by Number"
-                                        icon="fa-shield"
+                                <field name="tcc_number"/>
+                                <button name="action_tcc_checker" type="object"
+                                        string="TCC Checker"
                                         class="btn-secondary ms-2"/>
                             </div>
-                            <field name="excise_licence_last_checked" readonly="1"
-                                   force_save="1"/>
-
                         </group>
+                    </group>
+<!--                    <group string="Excise Licence">-->
+<!--                        <group>-->
+<!--                            <label for="vat" string="Tax Payer PIN"/>-->
+<!--                            <div class="o_row">-->
+<!--                                <field name="vat" />-->
+<!--                                <button name="action_excise_licence_checker_by_pin"-->
+<!--                                        type="object"-->
+<!--                                        string="Check Excise Licence"-->
+<!--                                        icon="fa-shield"-->
+<!--                                        class="btn-secondary ms-2"/>-->
+<!--                            </div>-->
+<!--                            <field name="trading_business_name" readonly="1"-->
+<!--                                   force_save="1"/>-->
+<!--                            <field name="is_small_brewer" readonly="1" force_save="1"/>-->
+<!--                            <field name="goods_class" readonly="1" force_save="1"/>-->
+<!--                            <field name="excise_licence_status" readonly="1"-->
+<!--                                   force_save="1" widget="badge"-->
+<!--                                   decoration-success="excise_licence_status == 'Approved'"-->
+<!--                                   decoration-danger="excise_licence_status == 'Rejected'"-->
+<!--                                   decoration-warning="excise_licence_status == 'Pending'"/>-->
+<!--                            <field name="excise_licence_issue_date" readonly="1" force_save="1"/>-->
+<!--                            <label for="excise_licence_no"/>-->
+<!--                            <div class="o_row">-->
+<!--                                <field name="excise_licence_no"/>-->
+<!--                                <button name="action_excise_licence_checker_by_num"-->
+<!--                                        type="object"-->
+<!--                                        string="Check Excise Licence by Number"-->
+<!--                                        icon="fa-shield"-->
+<!--                                        class="btn-secondary ms-2"/>-->
+<!--                            </div>-->
+<!--                            <field name="excise_licence_last_checked" readonly="1"-->
+<!--                                   force_save="1"/>-->
+
+<!--                        </group>-->
+<!--                        <group></group>-->
+<!--                    </group>-->
 <!--                        <group string="Import Certificate">-->
 <!--                            <label for="import_certificate_no"/>-->
 <!--                               <div class="o_row">-->
@@ -235,7 +145,6 @@
 <!--                            <field name="import_certificate_issue_date" readonly="1"/>-->
 <!--                            <field name="product_code" readonly="1"/>-->
 <!--                        </group>-->
-                    </group>
                     <notebook>
                         <page string="Tax Obligations">
                             <group>
@@ -247,17 +156,16 @@
                                        readonly="1">
                                     <list>
                                         <field name="name"/>
-                                        <field name="obligationid"/>
+                                        <field name="obligationid" optional="hide"/>
                                         <field name="obligation_type"/>
                                     </list>
                                 </field>
-
                             </group>
                         </page>
                         <page string="Import Certificate">
                             <group>
                                 <group colspan="4">
-                                    <field name="kra_pin" class="fw-bold" readonly="1"
+                                    <field name="vat" class="fw-bold" readonly="1"
                                            nolabel="1"/>
                                     <button name="action_check_import_certificate_by_pin"
                                             type="object"
@@ -276,9 +184,12 @@
                                         <field name="product_code" readonly="1"
                                                force_save="1"/>
                                         <field name="status" readonly="1" widget="badge"
+                                               decoration-success="status == 'Approved'"
+                                               decoration-warning="status == 'Pending'"
+                                               decoration-danger="status == 'Rejected'"
                                                force_save="1"/>
                                         <field name="partner_id"
-                                               column_invissible="1" readonly="1"/>
+                                               column_invisible="1" readonly="1"/>
                                         <button name="action_check_import_certificate_by_num"
                                                 type="object"
                                                 string="Check By Number"
@@ -315,6 +226,38 @@
                                     </list>
                                 </field>
                             </group>
+                        </page>
+                        <page string="Excise Licence">
+                            <button name="action_excise_licence_checker_by_pin"
+                                    type="object"
+                                    string="Check Excise Licence"
+                                    icon="fa-shield"
+                                    class="btn-secondary ms-2"/>
+                            <group>
+                                <field name="excise_licence_last_checked"
+                                       readonly="1" force_save="1"/>
+                            </group>
+                            <field name="excise_licence_lines" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="excise_licence_no"/>
+                                    <field name="is_small_brewer" readonly="1"/>
+                                    <field name="class_of_goods" readonly="1"/>
+                                    <field name="date_of_issue" readonly="1"/>
+                                    <field name="status" readonly="1"
+                                           force_save="1" widget="badge"
+                                           decoration-success="status == 'Approved'"
+                                           decoration-danger="status == 'Rejected'"
+                                           decoration-warning="status == 'Pending'"/>
+                                    <field name="partner_id" column_invisible="1"/>
+                                    <button name="action_excise_licence_checker_by_num"
+                                            type="object"
+                                            string="Check Excise Licence by Number"
+                                            icon="fa-shield"
+                                            class="btn-secondary ms-2"
+                                            invisible="not excise_licence_no"
+                                    />
+                                </list>
+                            </field>
                         </page>
                     </notebook>
                 </page>

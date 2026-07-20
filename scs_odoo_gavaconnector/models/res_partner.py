@@ -1,10 +1,12 @@
 from datetime import datetime,timedelta
 
 from markupsafe import Markup
+import re
 
 from odoo import _, fields, models, api
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
+KRA_PIN_REGEX = re.compile(r"^[AP][0-9]{9}[A-Za-z]$")
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
@@ -106,6 +108,26 @@ class ResPartner(models.Model):
                                                        "status")
     tcc_issue_date = fields.Date(string="TCC Issue Date")
     tcc_expiry_date = fields.Date(string="TCC Expire Date")
+    excise_licence_lines = fields.One2many('excise.licence.line', 'partner_id')
+
+    @api.constrains("vat")
+    def _check_kra_pin_format(self):
+        for partner in self.filtered("vat"):
+            pin = partner.vat.strip().upper()
+
+            if not KRA_PIN_REGEX.fullmatch(pin):
+                raise ValidationError(_(
+                        "Invalid KRA PIN format.\n\n"
+                        "Expected format:\n"
+                        "• Starts with 'A' or 'P'\n"
+                        "• Followed by 9 digits\n"
+                        "• Ends with one alphabet\n\n"
+                        "Example: A123456789B"
+                        ))
+
+    @api.onchange('vat')
+    def _onchange_vat(self):
+        self.kra_validation_status = ""
 
 
     # ------------------------------------------------------------
@@ -140,12 +162,9 @@ class ResPartner(models.Model):
     # ------------------------------------------------------------
     def action_validate_kra_pin(self):
         self.ensure_one()
-        if not self.kra_pin:
+        if not self.vat:
             raise UserError(_("Please enter a KRA PIN."))
-        #
-        # api_config = self._get_gava_api("checker_pin")
-        # response = api_config.call_endpoint(payload={"KRAPIN": self.kra_pin})
-        response = self.env['gava.api'].validate_kra_pin(self.kra_pin)
+        response = self.env['gava.api'].validate_kra_pin(self.vat)
 
         validation_date = fields.Datetime.now()
 
@@ -166,12 +185,12 @@ class ResPartner(models.Model):
             self._post_kra_message(
                     _("KRA PIN validation failed for %(pin)s: %(error)s")
                     % {
-                            "pin"  : self.kra_pin,
+                            "pin"  : self.vat,
                             "error": error_message,
                             },
                     success=False,
                     )
-            return self._reload()
+            # return self._reload()
 
         pin_data = response.get("PINDATA", {})
         self.write(
@@ -185,11 +204,11 @@ class ResPartner(models.Model):
         self._post_kra_message(
                 _("KRA PIN %(pin)s verified successfully - status: %(status)s")
                 % {
-                        "pin"   : self.kra_pin,
+                        "pin"   : self.vat,
                         "status": self.kra_validation_status,
                         },
                 )
-        return self._reload()
+        # return self._reload()
 
     def action_retrieve_kra_pin(self):
         self.ensure_one()
@@ -204,8 +223,8 @@ class ResPartner(models.Model):
         if data and data.get("ResponseCode") == "30000":
             self.write(
                     {
-                            "kra_pin"          : data.get("TaxpayerPIN"),
-                            "kra_taxpayer_name": data.get("TaxpayerName"),
+                            "vat" : data.get("TaxpayerPIN"),
+                            "name": data.get("TaxpayerName"),
                             }
                     )
             self._post_kra_message(_("KRA PIN retrieved: %s") % data.get("TaxpayerPIN"))
@@ -220,15 +239,15 @@ class ResPartner(models.Model):
                     success=False,
                     )
 
-        return self._reload()
+        # return self._reload()
 
     def action_know_kra_station(self):
         self.ensure_one()
-        if not self.kra_pin:
-            raise UserError(_("Please enter a KRA PIN first."))
+        if not self.vat:
+            raise UserError(_("Please enter a PIN first."))
 
         api_config = self._get_gava_api("kra_know_tax_service")
-        data = api_config.call_endpoint(payload={"kraPIN": self.kra_pin})
+        data = api_config.call_endpoint(payload={"kraPIN": self.vat})
 
         if data and data.get("ResponseCode") == "84000":
             station_data = data.get("STATIONDATA") or {}
@@ -247,16 +266,16 @@ class ResPartner(models.Model):
                     success=False,
                     )
 
-        return self._reload()
+        # return self._reload()
 
     def action_it_exemption_checker(self):
         self.ensure_one()
 
-        if not self.kra_pin:
+        if not self.vat:
             raise UserError(_("Please enter a KRA PIN first."))
 
         api_config = self._get_gava_api("it_exemption_checker")
-        data = api_config.call_endpoint(payload={"pin": self.kra_pin})
+        data = api_config.call_endpoint(payload={"pin": self.vat})
 
         response_code = data.get("response_code")
         error_code = data.get("ErrorCode")
@@ -299,6 +318,7 @@ class ResPartner(models.Model):
                     "it_exemption_cert_no"       : False,
                     "it_exemption_effective_date": False,
                     "it_exemption_expiry_date"   : False,
+                    "it_exemption_issue_date"   : False,
                     })
 
             self._post_kra_message(
@@ -318,16 +338,16 @@ class ResPartner(models.Model):
                     success=False,
                     )
 
-        return self._reload()
+        # return self._reload()
 
     def fetch_tax_obligation(self):
         self.ensure_one()
 
-        if not self.kra_pin:
-            raise UserError(_("Please enter a KRA PIN first."))
+        if not self.vat:
+            raise UserError(_("Please enter a PIN first."))
 
         api_config = self._get_gava_api("taxpayer_obligations")
-        data = api_config.call_endpoint(payload={"taxPayerPin": self.kra_pin})
+        data = api_config.call_endpoint(payload={"taxPayerPin": self.vat})
         response_code = data.get("ResponseCode")
         response_msg = data.get("ResponseMsg")
         obligation_list = data.get("ObligationsList") or []
@@ -381,15 +401,15 @@ class ResPartner(models.Model):
                     success=False,
                     )
 
-        return self._reload()
+        # return self._reload()
 
     def action_check_import_certificate_by_pin(self):
         self.ensure_one()
-        if not self.kra_pin:
-            raise UserError(_("Please enter a KRA PIN first."))
+        if not self.vat:
+            raise UserError(_("Please enter a PIN first."))
 
         api_config = self._get_gava_api("certificate_checker_by_pin")
-        data = api_config.call_endpoint(payload={'pin_no': self.kra_pin})
+        data = api_config.call_endpoint(payload={'pin_no': self.vat})
         response_code = data.get("response_code")
         response_message = data.get("response_message")
         if response_code == "83000":
@@ -434,7 +454,7 @@ class ResPartner(models.Model):
             obsolete.unlink()
 
             self._post_kra_message(
-                    _("Import certificates fetched successfully.")
+                    _("All Import certificates fetched successfully.")
                     )
 
         else:
@@ -444,7 +464,7 @@ class ResPartner(models.Model):
                     success=False,
                     )
 
-        return self._reload()
+        # return self._reload()
 
     def action_check_vat_exemption_certificate(self):
         self.ensure_one()
@@ -493,71 +513,75 @@ class ResPartner(models.Model):
                     success=False,
                     )
 
+
     def action_excise_licence_checker_by_pin(self):
         self.ensure_one()
-        if not self.kra_pin:
-            raise UserError(_("Please enter a KRA PIN first."))
+
+        if not self.vat:
+            raise UserError(_("Please enter a PIN first."))
 
         api_config = self._get_gava_api("licence_checker_pin")
-        data = api_config.call_endpoint(payload={'PINNo': self.kra_pin})
+        data = api_config.call_endpoint(payload={"PINNo": self.vat})
+
         response_code = data.get("ResponseCode")
         response_message = data.get("Message")
         response_status = data.get("Status")
         error_message = data.get("ErrorMessage")
         error_code = data.get("ErrorCode")
+
         if error_code == "80002":
             self._post_kra_message(
                     _(error_message),
                     success=False,
                     )
+
             self.write({
-                    'trading_business_name'    : False,
-                    'is_small_brewer'          : False,
-                    'excise_licence_status'    : False,
-                    'goods_class'              : False,
-                    'excise_licence_issue_date': False,
-                    'excise_licence_no'        : False,
-                    'excise_licence_last_checked': fields.Datetime.now()
+                    "excise_licence_last_checked": fields.Datetime.now(),
                     })
-        elif response_status == "OK" and response_code == "80000":
+
+            self.excise_licence_lines.unlink()
+
+            return
+
+        if response_status == "OK" and response_code == "80000":
             pin_details = data.get("PIN_Details") or {}
             licence_details_list = data.get("ExciseLicenceDetails") or []
 
-            # Prefer an Approved licence
-            licence_details = next(
-                    (licence for licence in licence_details_list
-                     if licence.get("Status") == "Approved"),
-                    licence_details_list[0] if licence_details_list else {},
-                    )
-            date_of_issue = licence_details.get("DateOfIssue")
-
-            if date_of_issue:
-                date_of_issue = datetime.strptime(
-                        date_of_issue, "%d/%m/%Y"
-                        ).date()
             self.write({
-                    'trading_business_name'      : pin_details.get(
-                            'Trading_Business_Name'),
-                    'kra_taxpayer_name'          : pin_details.get(
-                            'TaxpayerName'),
-                    'is_small_brewer'            : licence_details.get(
-                            'isSmallBrewer'),
-                    'excise_licence_status'      : licence_details.get('Status'),
-                    'goods_class'                : licence_details.get(
-                            'ClassOfGoods'),
-                    'excise_licence_issue_date'  : date_of_issue,
-                    'excise_licence_no'          : licence_details.get(
-                            'ExciseLicenceNo'),
-                    'excise_licence_last_checked': fields.Datetime.now()
+                    "excise_licence_last_checked": fields.Datetime.now(),
                     })
+
+            # Replace existing licence records
+            self.excise_licence_lines.unlink()
+
+            vals_list = []
+            for licence in licence_details_list:
+                issue_date = licence.get("DateOfIssue")
+                if issue_date:
+                    issue_date = datetime.strptime(
+                            issue_date, "%d/%m/%Y"
+                            ).date()
+
+                vals_list.append({
+                        "partner_id"       : self.id,
+                        "is_small_brewer"  : licence.get("isSmallBrewer"),
+                        "status"           : licence.get("Status"),
+                        "class_of_goods"   : licence.get("ClassOfGoods"),
+                        "date_of_issue"    : issue_date,
+                        "excise_licence_no": licence.get("ExciseLicenceNo"),
+                        })
+
+            if vals_list:
+                self.env["excise.licence.line"].create(vals_list)
+
             self._post_kra_message(
-                    _("Excise Licence Validated successfully."),
+                    _("Excise Licence fetched successfully."),
                     success=True,
                     )
 
         else:
             self._post_kra_message(
-                    _("KRA Excise Licence Checker failed %s")
+                    _("KRA Excise Licence Checker failed: %s")
                     % (response_message or _("Unknown error")),
                     success=False,
                     )
@@ -588,8 +612,9 @@ class ResPartner(models.Model):
                         ).date()
 
             self.write({
-                    "kra_pin"                    : licence.get("PINNo"),
+                    "vat"                        : licence.get("PINNo"),
                     "kra_taxpayer_name"          : licence.get("TaxpayerName"),
+                    "name"                       : licence.get("TaxpayerName"),
                     "excise_licence_no"          : licence.get("ExciseLicenceNo"),
                     "excise_licence_status"      : licence.get("Status"),
                     "goods_class"                : licence.get("ClassOfGoods"),
@@ -636,13 +661,13 @@ class ResPartner(models.Model):
         response_status = response.get("Status")
         response_code = response.get("ResponseCode")
         if response_status == "OK" and response_code == "80000":
-            self.kra_pin = response.get("PIN")
+            self.vat = response.get("PIN")
 
             self._post_kra_message(
                     _(
                             "KRA PIN registration completed successfully.\n"
                             "Generated PIN: %s"
-                            ) % (self.kra_pin or "-"),
+                            ) % (self.vat or "-"),
                     success=True,
                     )
         error_message = (
@@ -661,14 +686,14 @@ class ResPartner(models.Model):
 
     def action_tcc_application(self):
         self.ensure_one()
-        if not self.kra_pin:
+        if not self.vat:
             raise UserError(_("Please enter Taxpayer PIN Number."))
         if not self.tcc_reason:
             raise UserError(_("Please enter TCC Reason."))
         taxpayer_details_dict = {}
         api_config = self._get_gava_api("tcc_application")
         taxpayer_details_dict.update({
-                "TaxpayerPIN": self.kra_pin,
+                "TaxpayerPIN": self.vat,
                 "ReasonForTCC": self.tcc_reason
                 })
         data = api_config.call_endpoint(payload={
@@ -690,13 +715,13 @@ class ResPartner(models.Model):
 
     def action_tcc_checker(self):
         self.ensure_one()
-        if not self.kra_pin:
+        if not self.vat:
             raise UserError(_("Please enter Taxpayer PIN Number."))
         if not self.tcc_number:
             raise UserError(_("Please enter TCC Number."))
         api_config = self._get_gava_api("compliance_checker")
         data = api_config.call_endpoint(payload={
-                'kraPIN'   : self.kra_pin,
+                'kraPIN'   : self.vat,
                 'tccNumber': self.tcc_number,
                 })
         if data.get("ResponseCode") == "83000":

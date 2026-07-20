@@ -4,3 +4,4 @@ access_gava_api,acess.gava.api,model_gava_api,base.group_user,1,1,1,0
 access_gava_tax_obligation,acess.gava.tax.obligation,model_tax_obligation,base.group_user,1,1,1,1
 access_gava_tax_certificate,acess.gava.tax.certificate,model_tax_certificate,base.group_user,1,1,1,1
 access_gava_vat_exemption_line,acess.gava.vat.exemption.line,model_vat_exemption_line,base.group_user,1,1,1,1
+access_gava_excise_licence_line,acess.gava.excise_licence.line,model_excise_licence_line,base.group_user,1,1,1,1
