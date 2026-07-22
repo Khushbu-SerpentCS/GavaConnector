@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_move_form_inherit_gava" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.gava</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='button_draft']" position="after">
+                <button name="action_invoice_checker" type="object"
+                        string="Invoice checker" class="btn-link" invisible="invoice_checked"/>
+            </xpath>
+            <field name="invoice_date" position="before">
+                <field name="kra_invoice_number" string="Invoice Number"/>
+            </field>
+            <xpath
+                    expr="//field[@name='invoice_line_ids']/list/field[@name='quantity']"
+                   position="after">
+                <field name="item_class_code" readonly="parent_id.state != 'draft'"/>
+                <field name="country_of_origin" readonly="parent_id.state != 'draft'"/>
+                <field name="packaging" readonly="parent_id.state != 'draft'"/>
+                <field name="packaging_unit_code" readonly="parent_id.state != 'draft'"/>
+            </xpath>
+            <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='tax_ids']"
+                               position="after">
+                <field name="tax_type_code" readonly="parent_id.state != 'draft'"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="KRA Invoice details">
+                    <group>
+                        <field name="control_unit_invoice_number"
+                               readonly="state != 'state'"/>
+                        <field name="trader_system_invoice_number" readonly="state != 'state'"/>
+                        <field name="device_serial_number" readonly="state != 'state'"/>
+                        <field name="relevant_invoice_number" readonly="state != 'state'"/>
+                        <field name="relevant_invoice_date" readonly="state != 'state'"/>
+                        <field name="invoice_status" readonly="state != 'state'"/>
+                        <field name="transaction_type" readonly="state != 'state'"/>
+                        <field name="sales_date" readonly="state != 'state'"/>
+                        <field name="transmission_date" readonly="state != 'state'"/>
+                        <field name="exemption_certificate_no" readonly="state != 'state'"/>
+                        <field name="invoice_checked" readonly="1"/>
+                        <field name="invoice_checked_on" readonly="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

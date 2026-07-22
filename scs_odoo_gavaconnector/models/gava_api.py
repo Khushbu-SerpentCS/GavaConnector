@@ -329,6 +329,16 @@ class GavaApi(models.Model):
                 payload={"KRAPIN": kra_pin}
                 )
 
+    def check_invoice(self, invoice_number, invoice_date):
+        if not invoice_number:
+            raise ValueError(_("Invoice Number is required."))
+        api_config = self.get_api("invoice_checker")
+        return api_config.call_endpoint(
+                payload={"invoiceNumber": invoice_number,
+                         "invoiceDate"  : invoice_date }
+                )
+
+
     def get_kra_tax_station(self, kra_pin):
         api_config = self.get_api_by_code("kra_know_tax_service")
         if not api_config:

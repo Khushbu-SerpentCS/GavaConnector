@@ -242,7 +242,7 @@
                                     <field name="excise_licence_no"/>
                                     <field name="is_small_brewer" readonly="1"/>
                                     <field name="class_of_goods" readonly="1"/>
-                                    <field name="date_of_issue" readonly="1"/>
+                                        <field name="date_of_issue" readonly="1"/>
                                     <field name="status" readonly="1"
                                            force_save="1" widget="badge"
                                            decoration-success="status == 'Approved'"
