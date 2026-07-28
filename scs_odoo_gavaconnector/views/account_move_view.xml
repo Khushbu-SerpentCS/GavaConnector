@@ -7,9 +7,11 @@
         <field name="arch" type="xml">
             <xpath expr="//button[@name='button_draft']" position="after">
                 <button name="action_invoice_checker" type="object"
-                        string="Invoice checker" class="btn-link" invisible="invoice_checked"/>
+                        string="Invoice checker" class="btn-link"
+                        invisible="invoice_checked or not requires_etims_check"/>
             </xpath>
             <field name="invoice_date" position="before">
+                <field name="requires_etims_check" />
                 <field name="kra_invoice_number" string="Invoice Number"/>
             </field>
             <xpath

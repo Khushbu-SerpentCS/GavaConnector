@@ -212,7 +212,7 @@ class GavaApi(models.Model):
 
         url = f"{(self.base_url or '').rstrip('/')}{endpoint}"
         print("\nmethod->", method, "\nendpoint->", endpoint, "\npayload->", payload,
-              "\nauthenticated->", authenticated)
+              "\nauthenticated->", authenticated, "\nauth->", auth)
         try:
             response = requests.request(
                     method=method,
@@ -270,7 +270,6 @@ class GavaApi(models.Model):
     def call_endpoint(self, payload=None, params=None, method="POST", endpoint=None):
         """Standardized entry point for calling this configuration's API.
         """
-        print("endpoint  method calling>>>>>>>>>>>>>>>>>>>>>")
         self.ensure_one()
         endpoint = endpoint or self.api_endpoint_id.endpoint
         if not endpoint:
@@ -279,7 +278,6 @@ class GavaApi(models.Model):
         data = self._request(
                 method=method, endpoint=endpoint, payload=payload, params=params
                 )
-        print("data>>>>>>>>>>>>>>", data)
         _logger.info("Gava API [%s]: call to %s completed.", self.name, endpoint)
         return data
 

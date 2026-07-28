@@ -1,4 +1,4 @@
-from odoo import models, fields, tools, _
+from odoo import models, fields, tools, _, api
 from odoo.exceptions import UserError
 from datetime import datetime
 from markupsafe import Markup
@@ -28,6 +28,18 @@ class AccountMove(models.Model):
     exemption_certificate_no = fields.Char()
     invoice_checked = fields.Boolean()
     invoice_checked_on = fields.Datetime()
+    requires_etims_check = fields.Boolean(compute="_compute_requires_etims_check")
+
+    @api.depends("partner_id")
+    def _compute_requires_etims_check(self):
+        for move in self:
+            partner = move.partner_id
+            move.requires_etims_check = bool(
+                partner
+                and partner.country_id
+                and partner.country_id.code == "KE"
+                and partner.tax_obligation_ids
+            )
 
     def action_post(self):
         for move in self.filtered(lambda m: m.move_type == "in_invoice"):
@@ -50,7 +62,7 @@ class AccountMove(models.Model):
                 self.id,
             )
             return
-    
+
         self.write(
             {
                 "it_exemption_status": partner.it_exemption_status,
